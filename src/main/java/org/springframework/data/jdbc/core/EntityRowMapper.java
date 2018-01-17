@@ -52,6 +52,7 @@ public class EntityRowMapper<T> implements RowMapper<T> {
 	private final DataAccessStrategy accessStrategy;
 	private final JdbcPersistentProperty idProperty;
 
+	// TODO: should just take a context and obtain conversions from there.
 	public EntityRowMapper(JdbcPersistentEntity<T> entity, ConversionService conversions, JdbcMappingContext context,
 			DataAccessStrategy accessStrategy) {
 

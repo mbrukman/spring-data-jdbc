@@ -70,6 +70,23 @@ List<DummyEntity> findByNameRange(@Param("lower") String lower, @Param("upper") 
 
 If you compile your sources with the `-parameters` compiler flag you can omit the `@Param` annotations.
 
+==== Custom RowMapper
+
+You can configure the `RowMapper` to use using either the `@Query(rowMapperClass = ....)` or you can register a `RowMapperMap` bean and register `RowMapper` per method return type.
+
+[source,java]
+----
+
+		@Bean
+		RowMapperMap rowMappers() {
+			return new ConfigurableRowMapperMap() //
+					.register(DummyEntity.class, new MyDummyEntityRowMapper()) //
+					.register(String.class, new StringRowMapper());
+		}
+
+----
+
+
 === Id generation
 
 Spring Data JDBC uses the id to identify entities but also to determine if an entity is new or already existing in the database.

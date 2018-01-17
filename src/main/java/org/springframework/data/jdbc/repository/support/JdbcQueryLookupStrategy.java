@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import org.springframework.data.jdbc.core.DataAccessStrategy;
 import org.springframework.data.jdbc.core.EntityRowMapper;
 import org.springframework.data.jdbc.mapping.model.JdbcMappingContext;
+import org.springframework.data.jdbc.repository.RowMapperMap;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -37,12 +38,14 @@ class JdbcQueryLookupStrategy implements QueryLookupStrategy {
 
 	private final JdbcMappingContext context;
 	private final DataAccessStrategy accessStrategy;
+	private final RowMapperMap rowMapperMap;
 
 	JdbcQueryLookupStrategy(EvaluationContextProvider evaluationContextProvider, JdbcMappingContext context,
-			DataAccessStrategy accessStrategy) {
+			DataAccessStrategy accessStrategy, RowMapperMap rowMapperMap) {
 
 		this.context = context;
 		this.accessStrategy = accessStrategy;
+		this.rowMapperMap = rowMapperMap;
 	}
 
 	@Override
@@ -50,10 +53,23 @@ class JdbcQueryLookupStrategy implements QueryLookupStrategy {
 			ProjectionFactory projectionFactory, NamedQueries namedQueries) {
 
 		JdbcQueryMethod queryMethod = new JdbcQueryMethod(method, repositoryMetadata, projectionFactory);
-		Class<?> domainType = queryMethod.getReturnedObjectType();
-		RowMapper<?> rowMapper = new EntityRowMapper<>(context.getRequiredPersistentEntity(domainType),
-				context.getConversions(), context, accessStrategy);
+		RowMapper<?> rowMapper = determineDefaultRowMapper(queryMethod);
 
 		return new JdbcRepositoryQuery(queryMethod, context, rowMapper);
+	}
+
+	private RowMapper<?> determineDefaultRowMapper(JdbcQueryMethod queryMethod) {
+
+		Class<?> domainType = queryMethod.getReturnedObjectType();
+
+		RowMapper typeMappedRowMapper = rowMapperMap.rowMapperFor(domainType);
+
+		return typeMappedRowMapper == null //
+				? new EntityRowMapper<>( //
+						context.getRequiredPersistentEntity(domainType), //
+						context.getConversions(), //
+						context, //
+						accessStrategy) //
+				: typeMappedRowMapper;
 	}
 }
